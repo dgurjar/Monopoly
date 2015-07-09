@@ -14,6 +14,7 @@ class player_table:
 	def __init__(self):
 		# initialize 
 		self.data = []
+		self.table_length = 0
 		self.player_count = 0
 		
 		self._player_id = 0
@@ -28,6 +29,7 @@ class player_table:
 		# Creates a player with unique ID number, initializes position, cash, etc
 		self.data.append([self.player_count, name, 1500, 0, 0, 0, True])
 		self.player_count += 1
+		self.table_length += 1
 		
 	def name(self, player_id):
 		# Takes player id, returns name of player
@@ -172,10 +174,24 @@ class player_table:
 					self.in_game(player_id,False)
 					self.player_count -= 1
 					return liquidation_value
-							
-				
-				
 		
+	def load_game(self, player_info):
+		# Creates a player with unique ID number, initializes position, cash, etc
+		
+		split_info = player_info.split(',')
+		for i in (0,2,3,4,5):
+			split_info[i] = int(split_info[i])
+		split_info[6] = bool(split_info[6])
+		self.player_count += 1
+		self.table_length += 1
+		self.data.append(split_info)
+	
+	def clear_data(self):
+		self.data = []
+		self.table_length = 0
+		self.player_count = 0
+				
+
 		
 		
 		

@@ -50,23 +50,17 @@ class property_table:
 				self.cur.execute("""INSERT INTO property VALUES (?,?,?,?,?,?,?,?,
 				?,?,?,?,?,?,?,0);""",line.replace('\n','').split(','))
 		self.con.commit()
-		self.con.close()
 				
 	def get_value(self, property_id, attribute):
 		# Takes property id and string for attribute, returns value for player_id from that column
-		self.con = sqlite3.connect(database_file)		
-		self.cur=self.con.cursor()
 		_statement = "SELECT %s FROM property WHERE id = %d" % (attribute, property_id)
 		self.cur.execute(_statement)
 		b=self.cur.fetchall()
-		self.con.close()
 		return(b[0][0])
 		
 	def set_value(self, property_id, attribute, value):
 		# Tales prop_id, str for attribute, and value
 		# Changes attribute at prop_id to value
-		self.con = sqlite3.connect(database_file)		
-		self.cur=self.con.cursor()
 		if isinstance(value,str):
 			_statement = "UPDATE property SET %s = %s WHERE id = %s"\
 			% (attribute,value,property_id)
@@ -75,27 +69,21 @@ class property_table:
 			% (attribute,value,property_id)
 		self.cur.execute(_statement)
 		self.con.commit()
-		self.con.close()
 	
 	def hotel_eligible(self):
 		# This is called at beginning of every turn.
 		# Rule in monopoly is that you can't build a hotel on a property the same
 		# turn you build 4 houses. This updates column to 0 for properties with 
 		# less than 4 houses at beginnign of turn.
-		self.con = sqlite3.connect(database_file)		
-		self.cur=self.con.cursor()
 		_statement = """UPDATE property SET hotel_eligible = 0 WHERE houses < 4;"""
 		self.cur.execute(_statement)
 		_statement = """UPDATE property SET hotel_eligible = 1 WHERE houses >= 4;"""
 		self.cur.execute(_statement)
 		self.con.commit()
-		self.con.close()
 		
 	def check_monopoly(self, property_id):
 	#takes a property value, returns whether or not that property is part of monopoly
 		# check for number of owners
-		self.con = sqlite3.connect(database_file)		
-		self.cur=self.con.cursor()
 		_statement = """SELECT COUNT(DISTINCT owner) FROM property a 
 				WHERE a.color = (SELECT b.color FROM property b 
 				WHERE b.id = %d)""" % (property_id)
@@ -104,7 +92,6 @@ class property_table:
 		#ensure it isn't a bank owned monopoly
 		player_owned = (self.get_value(property_id , 'owner') != 9)
 		# if owned by only one entity AND entity is a player, return True
-		self.con.close()
 		if (player_owned) and (owner_count == 1):
 			return True
 		else:
@@ -118,8 +105,6 @@ class property_table:
 		WHERE a.owner = %s AND type = 'prop' AND color NOT IN ('Railroad','Utility') GROUP BY a.color) b
 		JOIN (SELECT c.color, count(c.id) total_count FROM property c GROUP BY c.color) d
 		ON b.color = d.color WHERE b.owner_count = d.total_count;""" % (player_id)
-		self.con = sqlite3.connect(database_file)		
-		self.cur=self.con.cursor()
 		self.cur.execute(_statement)
 		_raw_monopoly_array_color=self.cur.fetchall()
 		_monopoly_array_color = []
@@ -139,8 +124,6 @@ class property_table:
 		# Performs 2 key functions. If 'kill' equals any number,
 		# player's houses and properties are returned to bank, mortgaged.
 		# If no 'kill' arg specified, provides a player's liquidation value (houses, properties)
-		self.con = sqlite3.connect(database_file)		
-		self.cur=self.con.cursor()
 		if isinstance(kill, int):
 			_statement = """UPDATE property  SET houses = 0, owner = 9, mortgage = 1
 			WHERE owner = %d""" % (player_id)
@@ -154,13 +137,10 @@ class property_table:
 			if not _liquidation_value:
 				_liquidation_value = 0
 			return _liquidation_value
-		self.con.close()	
 	def rent_amount(self, property_id, dice_roll):
 		# Takes property_id and returns rent amount
 		property_color = self.get_value(property_id,"color")
 		houses_on_property = self.get_value(property_id,"houses")
-		self.con = sqlite3.connect(database_file)		
-		self.cur=self.con.cursor()
 		if property_color == "Railroad":
 			# Railroads and utilities have special rules. Count railroads.
 			_statement = """SELECT count(id) FROM property WHERE owner = 
@@ -203,7 +183,6 @@ class property_table:
 			owed_amount = self.get_value(property_id, "rent_4_house")
 		else:
 			owed_amount = self.get_value(property_id, "rent_hotel")
-		self.con.close()
 		return owed_amount
 	
 	def mortgage_menu(self, pl_table, player_id):
@@ -224,8 +203,6 @@ class property_table:
 	def mortgage_prop(self, pl_table, player_id, action):
 		# Allows player to mortgage or unmortgage property, depending on 'action' arg
 		print '\n======================================================\n'
-		self.con = sqlite3.connect(database_file)		
-		self.cur=self.con.cursor()
 		if action == "Mortgage":
 			# If mortgaging, value of mortgaged property is half property value
 			mort_index = 0
@@ -265,7 +242,7 @@ class property_table:
 				print '\nSelect which property you would like to %s.\
 				\nType Menu to go back.' % (action.lower())
 				choice = raw_input('> ')
-				if len(choice.replace(' ','')) > 0  and choice in str(range(1,len(mortgage_list)+1)):
+				if choice in str(range(1,len(mortgage_list)+1)):
 					# If choice is made, that property is (un)mortgaged,
 					# removed from list, and amount of money is credited to player.
 					property_id = mortgage_list[int(choice) - 1][0]
@@ -287,13 +264,10 @@ class property_table:
 						print 'CASH FOR PLAYER: %d' % pl_table.cash(player_id)
 				elif choice.lower() != "menu":
 					print "You must enter a number or type menu, dude"
-		self.con.close()
 	
 	def house_menu(self, pl_table, player_id):
 		# Menu for building houses. If no properties eligible for building,
 		# print message
-		self.con = sqlite3.connect(database_file)		
-		self.cur=self.con.cursor()
 		monopolies = self.player_monopolies(player_id)
 		_statement = "SELECT id, name, color, houses, 0 FROM property\
 					WHERE id IN %s" % (tuple(monopolies),)
@@ -320,14 +294,11 @@ class property_table:
 					self.house_builder(monopolies, pl_table, player_id, 'Buy', 'Hotel')
 				elif choice == '4':
 					self.house_builder(monopolies, pl_table, player_id, 'Sell', 'Hotel')
-		self.con.close()
 			
 	def house_builder(self, monopolies, pl_table, player_id, buy_sell, house_hotel):
 	# Builds/sells houses. Checks if move is legal and ensures player has cash to do it
 		# This sets the max number of houses (hotels) that can go on a property.
 		# Since they're all stored as one value (0-5), this is necessary
-		self.con = sqlite3.connect(database_file)		
-		self.cur=self.con.cursor()
 		if house_hotel == 'House':
 			less_greater = '<= 4'
 			hotel_adjust = 0
@@ -469,13 +440,9 @@ class property_table:
 			else:
 				# If menu selected
 				print '\nNo changes have been made.\n'
-		self.con.close()
 
 	def legal_house_build(self, builder_data, to_build):
 		# takes list of property ids and house counts, returns if it's a legal build True or False
-		self.con = sqlite3.connect(database_file)		
-		self.cur=self.con.cursor()
-		
 		for i in range(len(builder_data)):
 			if to_build[i] != 0:
 				# This kind of sucks due to SQLite limitations.
@@ -508,26 +475,19 @@ class property_table:
 				if to_build[i] != 0:
 					self.set_value(builder_data[i][0], "houses", builder_data[i][4])
 		#return True or False
-		self.con.close()
 		return legal
 		
 	def player_properties(self, player_id):
-		self.con = sqlite3.connect(database_file)		
-		self.cur=self.con.cursor()
 		_statement = 'SELECT id FROM property WHERE owner = %d' % player_id
 		self.cur.execute(_statement)
 		pl_props = self.cur.fetchall()
-		self.con.close()
 		return pl_props
 	
 	def all_property_data(self):
 		# Used for saving game. Gives all table data
-		self.con = sqlite3.connect(database_file)		
-		self.cur=self.con.cursor()
 		_statement = 'SELECT * FROM property'
 		self.cur.execute(_statement)
 		all_props = self.cur.fetchall()
-		self.con.close()
 		return all_props
 		
 	def end_game(self):
@@ -537,21 +497,16 @@ class property_table:
 		
 	def load_game(self, property_info):
 		# Inserts property data for a single property
-		self.con = sqlite3.connect(database_file)		
-		self.cur=self.con.cursor()
 		split_info = property_info.split(',')
 		for i in (0,4,5,6,7,8,9,10,11,12,13,14,15):
 			split_info[i] = int(split_info[i])
 		self.cur.execute("""INSERT INTO property VALUES (?,?,?,?,?,?,?,?,
 				?,?,?,?,?,?,?,?);""",split_info)
-		self.con.commit()
-		self.con.close()
+		self.con.commit
 	
 	def clear_data(self):
 	# Call this before loading game. Deletes ALL data from table
 	# except column names.
-		self.con = sqlite3.connect(database_file)		
-		self.cur=self.con.cursor()
 		self.cur.executescript(
 		"""DROP TABLE IF  EXISTS property;
 		CREATE TABLE property(
@@ -571,4 +526,3 @@ class property_table:
 		houses INTEGER,
 		mortgage INTEGER,
 		hotel_eligible INTEGER);""")
-		self.con.close()

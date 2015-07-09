@@ -110,3 +110,49 @@ def luxury_tax_action(pl_table, prop_table, player_id):
 	pl_table.money_transfer(prop_table,player_id,-75,9)
 	
 	
+def look_ahead(pl_table, prop_table, player_id):
+	# Takes player's current position and prints a table of the next 12 spaces.
+	# Includes spaces_away, prop_name, rent, and owner
+	
+	print '\n======================================================\n'
+	print 'Here are the spaces you can land on in your next roll:\n'
+	
+	# Take player's current position as reference point
+	pl_location = pl_table.location(player_id)
+	#print headers
+	print '\nSpaces Away', ' ' * (21 - len('Property Name')), 'Property Name', \
+			' ' * (10 - len('rent')), 'Rent', ' ' * (16 - len('Owner')), 'Owner'
+	# Loop through and print values. If owner is bank, replace with 'BANK'
+	# If non-ownable property (chance, etc), leave owner blank
+	# If owned by bank or mortgaged, rent is 0. If unownable, blank. 
+	# Otherwise, rent is rent amount.
+	for i in range(1,13):
+		prop_name = prop_table.get_value(pl_location + i, "name")
+		owner_value = prop_table.get_value(pl_location + i, "owner")
+		# Assign positive rent value ONLY IF ownable AND owned by player (not bank)
+		if owner_value == 9:
+			rent = '$0'
+			owner = 'BANK'
+		elif owner_value == -1:
+			rent = ' '
+			owner = ' '
+		# go through 'else' if owned by a player in game
+		else:
+			owner = pl_table.name(owner_value)
+			if prop_table.get_value(pl_location + i, "mortgage"):
+				# print 'Mortgage' if mortgaged
+				rent = 'Mortgage'
+			# exception for utilities
+			elif prop_table.get_value(pl_location + i, "color") == 'Utility':
+				if prop_table.check_monopoly(pl_location +i):
+					rent = '10x Dice'
+				else:
+					rent = '4x Dice'
+			else:
+				rent = '$' + str(prop_table.rent_amount(pl_location + i,roll()))
+		# Print table, 1 row at a time
+		print ' ' * (10 - len(str(i))), i, ' ' * (21 - len(prop_name)), prop_name, \
+			' ' * (10 - len(rent)), rent, ' ' * (16 - len(owner)), owner
+	raw_input('\nPress Enter to return to the main menu.')
+	print '\n======================================================\n'
+		

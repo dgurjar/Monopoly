@@ -58,8 +58,11 @@ class cards:
 				self.cur.execute("""INSERT INTO community VALUES(?,?,?,
 				?,?,?);""",line.replace('\n','').split(','))
 		self.con.commit()
+		self.con.close()
 				
 	def draw_card(self, pl_table, prop_table, which_deck, player_id, dice_value):
+		self.con = sqlite3.connect(database_file)		
+		self.cur=self.con.cursor()
 		if which_deck == 'chance':
 			deck_name = 'Chance'
 		else:
@@ -96,6 +99,7 @@ class cards:
 		elif card_type == "nearest_railroad":
 			self.nearest_railroad(pl_table, prop_table, undrawn_cards[draw_id], player_id)
 		
+		self.con.close()
 		
 		
 	def replenish_deck(self,which_deck, deck_name):	
@@ -139,6 +143,8 @@ class cards:
 		# Calculates number of houses and hotels for player, multiplies by
 		# amount on card (NOTE: 'flag' column is house amt, 'amount' column
 		# is hotel amt.) Charges that amount to player
+		self.con = sqlite3.connect(database_file)		
+		self.cur=self.con.cursor()
 		_statement = """SELECT SUM(houses * %d) FROM property 
 					WHERE owner = %d AND houses BETWEEN 1 AND 4;""" \
 					% (card[self._flag], player_id)
@@ -167,11 +173,14 @@ class cards:
 		print "%s, you own %d houses and %d hotels. Your total bill is $%d."\
 			% (pl_table.name(player_id),house_count,hotel_count,total_fee)
 		pl_table.money_transfer(prop_table, player_id, -total_fee, 9)
+		self.con.close()
 			
 	def nearest_railroad(self,pl_table,prop_table,card,player_id):
 		# Calculates where nearest railroad is, moves player to that location
 		# If railroad is owned, uses special payment function to pay double
 		# amount. If unowned, gives option to buy
+		self.con = sqlite3.connect(database_file)		
+		self.cur=self.con.cursor()
 		move_amount = (5 - self.old_location) % 10
 		pl_table.location(player_id,move_amount)
 		print "\nThe nearest Railroad is the %s.\n" % (prop_table.get_value(pl_table.location(player_id), "name"))
@@ -197,6 +206,7 @@ class cards:
 				pl_table.money_transfer(prop_table, player_id, -owed_amount, railroad_owner)
 		else:
 			turn.location_action(pl_table, prop_table, self, player_id,1)
+		self.con.close()
 			
 	def nearest_utility(self,pl_table,prop_table,card,player_id):
 		# Calculates where nearest utility is, moves player to that location
@@ -231,4 +241,24 @@ class cards:
 				pl_table.money_transfer(prop_table, player_id, -owed_amount, utility_owner)
 		else:
 			turn.location_action(pl_table, prop_table, self, player_id,1)
+	
+	def all_cards(self, which_deck):
+		self.con = sqlite3.connect(database_file)		
+		self.cur=self.con.cursor()
+		_statement = "SELECT * FROM %s" % (which_deck)
+		self.cur.execute(_statement)
+		card_data = self.cur.fetchall()
+		self.con.close()
+		return card_data
+		
+	def load_game(self, which_deck, draw_status):
+		self.con = sqlite3.connect(database_file)		
+		self.cur=self.con.cursor()
+		split_draw_status = draw_status.split(',')
+		for i in range(len(split_draw_status)):
+			_statement = "UPDATE %s SET drawn = %d WHERE id = %d;" \
+				% (which_deck,int(split_draw_status[i]),i)
+			self.cur.execute(_statement)
+			self.con.commit()
+		self.con.close()
 			

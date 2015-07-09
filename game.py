@@ -3,6 +3,8 @@ import player_table
 import property
 import turn
 import cards
+import options
+import os
 
 #### INITIALIZE GAME #####
 
@@ -10,29 +12,24 @@ import cards
 pl = player_table.player_table()
 # Initialize property database
 prop = property.property_table()
-# Initiailize cards database
+# Initialize cards database
 cards = cards.cards()
-print '\n\n\n======================================================\n'
+# Initialize whose turn it is - if a game is loaded, this may change
+whose_turn = 0
+
+print '\n' * 50
+print '======================================================\n'
 print "Welcome to Monopoly: The game of unadulterated capitalism.\n\n"
 
-# use number_players.py to find valid integer for # of players
-number_of_players=start_game.number_players()
-print '\n======================================================'
-# create 'name array' prior to drawing for turns
-name_array = start_game.name_gather(pl, number_of_players)
-print '======================================================\n'
-#randomly assign turn order and create players in players table
-start_game.turn_order(pl, name_array, number_of_players)
+start_game.new_or_load(pl,prop,cards,whose_turn)
 print '\n======================================================'
 
 raw_input("\nWe're all set to play! Press enter to continue.\n")
-print '\n' * 40
+print '\n' * 50
 print '======================================================'
-whose_turn = 0
 while pl.player_count > 1:
 	doubles = True
 	doubles_count = 0
-	print "\n%s, it is your turn. You are at %s."% (pl.name(whose_turn), prop.get_value(pl.location(whose_turn), "name"))
 	if pl.in_game(whose_turn):
 		while doubles == True:
 			# doubles is always True at beginning of player's turn. Actions that put player in jail
@@ -51,22 +48,29 @@ while pl.player_count > 1:
 				# 'choices' var is number of options allowable. If player is in jail,
 				# option to pay is available. If player also has GOOJ free card,
 				# then that option is also available.
-				choices = 3
+				choices = 4
+				print '\n======================================================\n'
+				print "%s, it is your turn. You are at %s."\
+				% (pl.name(whose_turn), prop.get_value(pl.location(whose_turn), "name"))
 				print "\nPlease choose an option.\n1. Roll\n2. Buy/Sell Houses\
-					\n3. Mortgage/Unmortgage Property" 
+					\n3. Mortgage/Unmortgage Property \n4. Look Ahead at Board" 
 				if pl.in_jail(whose_turn) > 0:
 					choices += 1
-					print "4. Pay $50 to exit Jail"
+					print "5. Pay $50 to exit Jail"
 					if pl.get_out_of_jail(whose_turn) > 0:
-						print '5. Use "Get out of Jail Free" Card'
+						print '6. Use "Get out of Jail Free" Card'
 						choices += 1
+				print "\n0. Game Options"
 				option = raw_input('\n> ')
-				if option == '5' and choices >= 5:
+				if option == '0' or option.lower() == 'o':
+					# Send player to options menu
+					options.options_menu(pl,prop,cards,whose_turn)
+				elif option == '6' and choices >= 6:
 					# Use GOOJ free card, gets out of jail, takes away one GOOJ free card
 					print 'You have used your "Get out of Jail Free" card. Enjoy your freedom!'
 					pl.get_out_of_jail(whose_turn,-1)
 					pl.in_jail(whose_turn,False)
-				elif option == '4' and choices >= 4:
+				elif option == '5' and choices >= 5:
 					# If player has $50, takes $50 from player and takes them out of jail
 					if pl.cash(whose_turn) < 50:
 						print "Insufficient funds. You do not have $50"
@@ -74,6 +78,9 @@ while pl.player_count > 1:
 						print "You have paid $50 and are no longer in jail. Enjoy your freedom!"
 						pl.in_jail(whose_turn,False)
 						pl.money_transfer(prop , whose_turn, -50, 9)
+				elif option == '4':
+					# Call function to print board information
+					turn.look_ahead(pl, prop, whose_turn)
 				elif option == '3':
 					# Send player to mortgage menu
 					prop.mortgage_menu(pl, whose_turn)
@@ -133,11 +140,11 @@ while pl.player_count > 1:
 			if doubles and doubles_count > 0:
 				print "Congratulations %s, you rolled doubles! Go again." % (pl.name(whose_turn))
 	print "\n%s, your turn is over. %s is up next. Press Enter to advance."\
-			% (pl.name(whose_turn), pl.name((whose_turn + 1) % number_of_players))
+			% (pl.name(whose_turn), pl.name((whose_turn + 1) % pl.table_length))
 	raw_input()
 	# Print blank lines to clear output
-	print '\n' * 40
-	whose_turn = (whose_turn + 1) % number_of_players
+	print '\n' * 50
+	whose_turn = (whose_turn + 1) % pl.table_length
 
 # When only one player is left, determine who the winner is and
 # liquidate their assets to find winning net worth
