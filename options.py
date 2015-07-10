@@ -5,6 +5,7 @@ import os
 import start_game
 
 def options_menu(pl_table, prop_table, cards, whose_turn):
+# Prints options, takes input from user, sends to appropriate function
 	print '\n' * 50
 	choice = 'i'
 	print '\n======================================================\n'
@@ -210,6 +211,7 @@ def load_game(pl_table, prop_table, cards, whose_turn):
 		if len(save_folder_contents) == 0:
 			# If saves folder is empty
 			print "\nNo saved games available."
+			choice = 'menu'
 		else:
 			# Print list of saved games. Remove .txt extension
 			print '\nHere is the list of saved games: '

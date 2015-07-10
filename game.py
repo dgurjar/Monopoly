@@ -89,7 +89,8 @@ while pl.player_count > 1:
 					prop.house_menu(pl, whose_turn)
 			# rolls dice
 			dice_roll = turn.roll()
-			print '\n======================================================\n'
+			
+			print '\n' * 50, '\n======================================================\n'
 			print "You rolled a %d and a %d." % (dice_roll[0], dice_roll[1])
 			if pl.in_jail(whose_turn) > 0 and dice_roll[2] == True:	
 				# If player rolls doubles in jail, they don't get to roll again

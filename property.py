@@ -15,6 +15,7 @@ class property_table:
 # owned by that player that are in monopolies. Useful for house building
 # maximum_houses takes a property number and returns the maximum number of houses
 # that can be built on that property
+# also contains functions for mortgage menu, house builder menu, and player liquidation
 	def __init__(self):
 		# Per monopoly rules, a maximum of 32 houses and 12 hotels may be used in a game
 		# This is updated if player buys houses/hotels
@@ -155,6 +156,7 @@ class property_table:
 				_liquidation_value = 0
 			return _liquidation_value
 		self.con.close()	
+		
 	def rent_amount(self, property_id, dice_roll):
 		# Takes property_id and returns rent amount
 		property_color = self.get_value(property_id,"color")
@@ -210,7 +212,7 @@ class property_table:
 		# Mortgage menu. Asks if player is mortgaging or un, and sends choice
 		# as argument to mortgage_prop function
 		choice = 'ii'
-		print '\n======================================================\n'
+		print '\n' * 50, '\n======================================================\n'
 		print 'Welcome to the mortgage menu, %s.' % (pl_table.name(player_id))
 		while choice.lower() != 'menu':
 			print 'Please select an option.\n1. Mortgage Property\
@@ -220,6 +222,7 @@ class property_table:
 				self.mortgage_prop(pl_table, player_id, "Mortgage")
 			if choice == '2':
 				self.mortgage_prop(pl_table,player_id, "Unmortgage")
+		print '\n' * 50
 	
 	def mortgage_prop(self, pl_table, player_id, action):
 		# Allows player to mortgage or unmortgage property, depending on 'action' arg
@@ -242,11 +245,14 @@ class property_table:
 		mortgage_list = self.cur.fetchall()
 		if len(mortgage_list) == 0 and mort_index == 0:
 			# If no properties are avail to mortgage
+			print '\n' * 50, '======================================================\n'
 			print "You have no properties available to mortgage.\
-			\nYou can only mortgage a property if you own it, it is unmortgaged\
-			\nand no properties in its color group have houses or hotels.\n"
+			\nYou can only mortgage a property if you own it, \
+			\nit is unmortgaged, and no properties in its color \
+			\ngroup have houses or hotels.\n"
 			choice = 'menu'
 		elif len(mortgage_list) == 0 and mort_index == 1:
+			print '\n' * 50, '======================================================\n'
 			print "All of your properties are unmortgaged.\n"
 			choice = 'menu'
 		else:
@@ -292,6 +298,7 @@ class property_table:
 	def house_menu(self, pl_table, player_id):
 		# Menu for building houses. If no properties eligible for building,
 		# print message
+		print '\n' * 50
 		self.con = sqlite3.connect(database_file)		
 		self.cur=self.con.cursor()
 		monopolies = self.player_monopolies(player_id)
@@ -302,7 +309,8 @@ class property_table:
 		if len(monopoly_data) == 0:
 			print '\n======================================================\n'
 			print 'You do not have any improvable properties.\
-			\nYou must own every property (unmortgaged) in a color group to build houses and hotels.'
+			\nYou must own every property (unmortgaged) in a color \
+			\ngroup to build houses and hotels.'
 		else:
 			print '\nWelcome to the house builder menu!'
 			choice = 'i'

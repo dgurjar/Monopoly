@@ -70,6 +70,7 @@ def property_action(pl_table,prop_table,player_id, space_id, dice_value):
 			if option.lower() == 'yes':
 				# If purchased, changes owner in prop table to player, takes money from player
 				# equal to property cost.
+				print '\n' * 50, '\n======================================================\n'
 				print "\nYou are now the proud owner of %s!" % (prop_table.get_value(space_id, "name"))
 				pl_table.money_transfer(prop_table, player_id, -property_cost, 9)
 				prop_table.set_value(space_id, "owner", player_id)
@@ -114,7 +115,7 @@ def look_ahead(pl_table, prop_table, player_id):
 	# Takes player's current position and prints a table of the next 12 spaces.
 	# Includes spaces_away, prop_name, rent, and owner
 	
-	print '\n======================================================\n'
+	print '\n' * 50, '\n======================================================\n'
 	print 'Here are the spaces you can land on in your next roll:\n'
 	
 	# Take player's current position as reference point
@@ -153,6 +154,7 @@ def look_ahead(pl_table, prop_table, player_id):
 		# Print table, 1 row at a time
 		print ' ' * (10 - len(str(i))), i, ' ' * (21 - len(prop_name)), prop_name, \
 			' ' * (10 - len(rent)), rent, ' ' * (16 - len(owner)), owner
-	raw_input('\nPress Enter to return to the main menu.')
 	print '\n======================================================\n'
+	raw_input('\nPress Enter to return to the main menu.')
+	print '======================================================\n'
 		
