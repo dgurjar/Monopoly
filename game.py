@@ -1,3 +1,4 @@
+#! python2
 import start_game
 import player_table
 import property
